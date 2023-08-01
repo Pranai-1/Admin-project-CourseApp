@@ -6,47 +6,76 @@ import CreateCourses from './components/Createcourses';
 import ShowCourses from './components/Showcourses';
 import UpdateCourses from './components/UpdateCourses';
 import Navbar from './components/navbar';
-
+import React from 'react';
+import { AdminState } from './store/atoms/admin';
+import {
+  RecoilRoot,
+  atom,
+  selector,
+  useRecoilState,
+  useRecoilValue,
+  useSetRecoilState,
+} from 'recoil';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 function App() {
-    const[logged,setLogged]=useState(false)
-    useEffect(()=>{
-      init()
-    },[])
-
-    let init=async()=>{
-        let token=localStorage.getItem("token")
-        const res=await axios("http://localhost:3000/admin/me",
-      {
-        method:"GET",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":`Bearer ${token}`
-        }
-        })
-      if(res.data.message=='success'){
-        setLogged(true)   
-      }else{
-        setLogged(false)
-     }
-      }
-    
-    return (
+   
+ return (
         <Router>
-            <Navbar logged={logged} setLogged={setLogged}/>
+          <RecoilRoot>
+            <InitUser/>
+            <Navbar />
             <Routes>
-                <Route  path="/admin/" element={<Landing logged={logged} setLogged={setLogged}/>} />
-                <Route path="/admin/login" element={<Login  setLogged={setLogged}/>} />
+                <Route  path="/admin/" element={<Landing />} />
+                <Route path="/admin/login" element={<Login />} />
                 <Route path="/admin/signup" element={<Signup />} />
                 <Route path="/admin/create" element={<CreateCourses />} />
                 <Route path="/admin/courses" element={<ShowCourses />} />
                 <Route path="/admin/courses/:id" element={<UpdateCourses />} />
                 
             </Routes>
+            </RecoilRoot>
         </Router>
     );
 }
 
+function InitUser(){
+  const adminState=useSetRecoilState(AdminState)
+
+  const init=async()=>{
+    let token=localStorage.getItem("token")
+    try{
+    const res=await axios("http://localhost:3000/admin/me",
+  {
+    method:"GET",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":`Bearer ${token}`
+    }
+    })
+  if(res.data.email){
+    adminState({
+      isLoading:false,
+        adminEmail:res.data.email
+    })   
+  }else{
+    adminState({
+      isLoading:false,
+        adminEmail:null
+    })   
+ }
+  }catch(e){
+    adminState({
+      isLoading:false,
+        adminEmail:null
+    }) 
+  }
+}
+    useEffect(()=>{
+      init()
+    },[])
+  
+
+}
 export default App;

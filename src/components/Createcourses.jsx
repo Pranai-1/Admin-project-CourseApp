@@ -11,12 +11,12 @@ function CreateCourses(){
 
    
     
-    function Create(){
+    async function Create(){
       let token=localStorage.getItem('token')
-        fetch("http://localhost:3000/admin/create",{
-            method:"POST",
+        const res=await axios.post("http://localhost:3000/admin/create",{
+          
             headers:{
-              "Content-Type":"application/json",
+            
               "Authorization":`Bearer ${token}`
             },
             body:JSON.stringify({
@@ -26,13 +26,13 @@ function CreateCourses(){
                 image:image,
                 published:published
             })
-        }).then(response=>response.json()).then((data)=>{
-            if(data.message=="success"){
+        })
+            if(res.data.message=="success"){
                alert("course Created")
             }else{
                 alert("failed to create course")
             }
-        })
+       
     }
 
     return(

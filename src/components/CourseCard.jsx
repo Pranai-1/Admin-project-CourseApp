@@ -1,20 +1,21 @@
-import { useEffect } from "react"
-import UpdateCard from "./UpdateCard";
+import { useRecoilValue, useSetRecoilState } from "recoil"
+import { CourseTitle, CourseImage, CoursePrice } from "../store/selectors/coursedata"
+
 function CourseCard(props){
-    console.log("child ")
+  const courseTitle=useRecoilValue(CourseTitle)
+  const courseImage=useRecoilValue(CourseImage)
+  const coursePrice=useRecoilValue(CoursePrice)
     return(
 <>
-    <div  className="h-[300px] w-full bg-indigo-200 flex justify-center items-center mb-[-50px] z-0 flex-wrap">
-           
-            <div className="text-3xl text-red-700 font-bold ">{ props.course.title}</div>
-              <div key={ props.id} className=" bg-indigo-100  h-[250px] w-max rounded-lg ml-[300px]  mt-[100px] grid justify-center ">
-              <img className="h-[150px] w-full  object-cover rounded-t-lg" src={ props.course.image} alt="image" />
-              <p className="h-max w-full font-bold text-xl text-blue-700 pl-2">{ props.course.title}</p>
-              <p className="h-[35px] mt-1 font-medium text-xs pl-2 overflow-auto">{ props.course.description}</p>
+   
+          <div>
+              <div key={ props.id} className=" bg-indigo-100  h-max w-[300px]  rounded-lg ml-[1000px]  grid  mt-[-150px] ">
+              <img className="h-[150px] w-full  object-cover rounded-t-lg" src={courseImage} alt="image" />
+              <p className="h-max w-full font-bold text-xl text-blue-700 pl-2">{ courseTitle}</p>
+              <p className="text-xs ml-2">Price Rs.</p>
+              <p className="h-[35px] mt-1 font-medium text-xs pl-2 overflow-auto">{ coursePrice}</p>
               </div>
-             
               </div>
-             
               </>
     )
 }
