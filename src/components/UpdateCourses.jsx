@@ -1,21 +1,18 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import Navbar from "./navbar";
-import { useNavigate } from "react-router-dom";
 import UpdateCard from "./UpdateCard";
 import CourseCard from "./CourseCard";
 import axios from "axios";
+import { CourseState } from "../store/atoms/Course";
+import {useRecoilValue, useSetRecoilState } from "recoil";
+import { CourseDetails, CourseTitle } from "../store/selectors/coursedata";
+
+
 function UpdateCourses(){
-   const[course,setCourse]=useState({
-    title:"",
-    description:"",
-    price:"",
-    image:"",
-    published:""
-   }
-   )
+  const courseState=useSetRecoilState(CourseState)
+  const courseDetails=useRecoilValue(CourseDetails)
     const id=useParams().id;
-    const navigate=useNavigate()
+
     useEffect(() => {
         let token = localStorage.getItem('token');
        
@@ -25,34 +22,61 @@ function UpdateCourses(){
           }
         }).then(res => {
           if (res.data.message === "success") {
-            setCourse({
-              ...course,
-              title: res.data.course.title,
-              description: res.data.course.description,
-              price: res.data.course.price,
-              image: res.data.course.image,
-              published: res.data.course.published,
-            });
+           
+            courseState(prevState => ({
+              ...prevState,
+              course: {
+                ...prevState.course,
+                title: res.data.course.title,
+                description: res.data.course.description,
+                price: res.data.course.price,
+                image: res.data.course.image,
+                published: res.data.course.published,
+              }
+            }))
+           
+           
           } else {
             alert('Login and try again');
           }
         });
       }, []);
       
-      console.log("parent update")
+     
   
     
-  
+      console.log(courseDetails)
 
         return(
             <>
-         
-           <CourseCard course={course} id={id}/>
-             <UpdateCard course={course} id={id} setCourse={setCourse}/>
+           {courseDetails ?(
+               <>
+               <BlueTopper/>
+               <CourseCard id={id}/>
+             <UpdateCard id={id} />
+               </>
+           ):(
+            <>
+            <div>Loading....</div>
+            </>
+
+           )}
+           
             </>
         )
         
    
+}
+
+function BlueTopper(){
+  const courseTitle=useRecoilValue(CourseTitle)
+  return(
+  <>
+  <div className="h-[300px] w-screen bg-indigo-200 flex justify-center items-center">
+  <p className="text-2xl text-blue-800 font-bold mr-[480px]">{courseTitle}</p>
+  </div>
+  </>
+  )
 }
 
 export default UpdateCourses

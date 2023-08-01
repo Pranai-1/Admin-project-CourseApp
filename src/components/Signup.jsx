@@ -1,36 +1,33 @@
 import Navbar from './navbar';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import axios from 'axios';
 function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
  
   const navigate = useNavigate();
   
-  function handleSubmit() {
-    fetch('http://localhost:3000/admin/signup', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+
+
+  async function handleSubmit() {
+    try {
+      const res = await axios.post('http://localhost:3000/admin/signup', {
         email: email,
-        password: password
-      })
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.message === 'success') {  
-          alert("signup successful")
-          navigate('/admin/login')
-          
-        } else {
-          alert("signup failed")
-        }
-        
+        password: password,
       });
+
+      if (res.data.message === 'success') {
+        alert("signup successful");
+        navigate('/admin/login');
+      } else {
+        alert("signup failed");
+      }
+    } catch (error) {
+      alert("signup failed");
+    }
   }
+  
 
    
   return (

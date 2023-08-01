@@ -1,44 +1,51 @@
 import Navbar from './navbar';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { AdminState } from '../store/atoms/admin';
+import { IsLoading } from '../store/selectors/isLoading';
+import axios from 'axios';
 
-function Login(props) {
- 
+function Login() {
+ const adminState=useSetRecoilState(AdminState)
+ const isLoading=useRecoilValue(IsLoading)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  function handleSubmit() {
-    let token=localStorage.getItem('token')
-    fetch('http://localhost:3000/admin/login', {
-      method: 'POST',
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":`Bearer ${token}`
-      },
-      body: JSON.stringify({
+ async function handleSubmit() {
+   try{
+   const res=await axios.post('http://localhost:3000/admin/login', {
         email: email,
         password: password
-      })
+     
     })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.message === 'success') {
-          localStorage.setItem("token",data.token)
+      if (res.data.message === 'success') {
+          localStorage.setItem("token",res.data.token)
           alert("Login successful")
+          adminState({
+            isLoading:false,
+            adminEmail:res.data.email
+          })
           navigate("/admin/")
          
         } else {
          alert("Login failed")
          
         }
-       
-      });
-  }
+      }catch(e){
+        alert("Login failed")
+      }
+      };
+  
 
   return (
     <>
-     
+     {isLoading &&(
+      <>
+      Loading....
+      </>
+     )}
 
       <div className='h-screen w-screen bg-indigo-100 p-10'>
         <div className='p-5 grid items-center justify-center'>

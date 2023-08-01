@@ -1,20 +1,29 @@
  import { useNavigate } from "react-router-dom";
  import { useEffect, useState } from "react";
 import Login from "./Login";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { AdminEmail } from "../store/selectors/AdminEmail";
+import { AdminState } from "../store/atoms/admin";
+import { IsLoading} from "../store/selectors/isLoading"
  
- function Navbar(props){
+ function Navbar(){
   const navigate=useNavigate()
   const [showSidebar, setShowSidebar] = useState(false);
-  const[email,setEmail]=useState(null)
-
+ const adminEmail=useRecoilValue(AdminEmail)
+ const isLoading=useRecoilValue(IsLoading)
+ const adminState=useSetRecoilState(AdminState)
+ 
  const toggleSidebar = () => {
     setShowSidebar((prevShowSidebar) => !prevShowSidebar);
-  };
+  }
 
-  
-
-    return (
+  return (
     <>
+    {isLoading &&(
+      <>
+      Loading.....
+      </>
+    )}
  {/* navbar starting..... */}
  <div className="fixed w-screen h-[45px] bg-indigo-400 flex justify-between">
   <div className="flex">
@@ -29,7 +38,7 @@ import Login from "./Login";
           {/* Sidebar content */}
           <ul className="text-white">
             <li onClick={()=>{
-              if(props.logged){
+              if(adminEmail){
               navigate('/admin/create')
               }else{
                 alert("Login to continue")
@@ -39,7 +48,7 @@ import Login from "./Login";
               className="font-medium p-2 cursor-pointer text-blue-700 hover:text-red-600">
                 Create Course</li>
             <li onClick={()=>{
-              if(props.logged){
+              if(adminEmail){
               navigate('/admin/courses')
               }else{
                 alert("Login to continue")
@@ -58,13 +67,16 @@ import Login from "./Login";
    <li className="md:font-medium md:p-2 md:m-1 cursor-pointer hover:text-indigo-700">About Us</li>
    <li className="md:font-medium md:p-2 md:m-1 cursor-pointer hover:text-indigo-700">Contact Us</li>
  </ul>
- {props.logged ?(
+ {adminEmail ?(
 <>
 <div className=" hidden md:flex font-bold text-white">
-  <p className="text-xs mt-3 text-black">{email}</p>
+  <p className="text-xs mt-3 text-black">{adminEmail}</p>
    <button onClick={()=>{
     localStorage.removeItem("token")
-    props.setLogged(false)
+    adminState({
+      isLoading:false,
+      adminEmail:null
+    })
    
     navigate("/admin/")
    }} 
