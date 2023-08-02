@@ -1,4 +1,4 @@
-
+import axios from "axios"
 import { useState,useEffect } from "react"
 function CreateCourses(){
   
@@ -11,30 +11,36 @@ function CreateCourses(){
 
    
     
-    async function Create(){
-      let token=localStorage.getItem('token')
-        const res=await axios.post("http://localhost:3000/admin/create",{
-          
-            headers:{
-            
-              "Authorization":`Bearer ${token}`
-            },
-            body:JSON.stringify({
-                title:title,
-                description:description,
-                price:price,
-                image:image,
-                published:published
-            })
-        })
-            if(res.data.message=="success"){
-               alert("course Created")
-            }else{
-                alert("failed to create course")
-            }
-       
-    }
-
+    async function Create() {
+        let token = localStorage.getItem('token');
+        console.log(token);
+        const config = {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        };
+        const data = {
+          title: title,
+          description: description,
+          price: price,
+          image: image,
+          published: published
+        };
+      
+        try {
+          const res = await axios.post("http://localhost:3000/admin/create", data, config);
+      
+          if (res.data.message === "success") {
+            alert("Course Created");
+          } else {
+            alert("Failed to create course");
+          }
+        } catch (error) {
+          console.error(error);
+          alert("An error occurred while creating the course");
+        }
+      }
+      
     return(
         <>
    

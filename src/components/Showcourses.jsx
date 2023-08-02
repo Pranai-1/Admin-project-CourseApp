@@ -9,7 +9,8 @@ function ShowCourses() {
   useEffect(() => {
      
         axios.get("http://localhost:3000/admin/courses").then((res) => {
-            setCourses(res.data);
+        
+            setCourses(res.data.data);
           });
    }, []);
  
@@ -22,9 +23,9 @@ function ShowCourses() {
           "Authorization": `Bearer ${token}`
         }
       });
-  
-      if (response.data.message === "success") {
-        const updatedCourses = courses.filter((course) => course.id !== id);
+       console.log(response.data)
+      if (response.data.message == "success") {
+        const updatedCourses = courses.filter((course) => course._id !== id);
         setCourses(updatedCourses);
       }
     } catch (error) {
@@ -44,7 +45,7 @@ function ShowCourses() {
         <p className="text-xl text-blue-600 font-bold p-3 w-screen mt-3 flex justify-center">Created Courses</p>
         <div className=" p-3 flex flex-wrap justify-center">
           {courses.map((course) => (
-            <div key={course.id} id='${course.id}' className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
+            <div key={course._id} id='${course._id}' className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
               <img className="h-[150px] w-full object-cover" src={course.image} alt="Course" />
               <div className="p-3 pb-0 h-[100px] m-0">
                 <h2 className="font-bold w-full text-xl text-blue-700">{course.title}</h2>
@@ -52,12 +53,12 @@ function ShowCourses() {
               </div>
               <div className="flex justify-between items-center ml-3 mr-3 h-[40px]">
                 <Link
-                  to={`/admin/courses/${course.id}`}
+                  to={`/admin/courses/${course._id}`}
                   className="py-2 px-4 bg-blue-700 hover:bg-indigo-500 text-white font-medium rounded"
                 >
                   Update
                 </Link>
-                <button  onClick={()=>{Delete(course.id)}}
+                <button  onClick={()=>{Delete(course._id)}}
                   className="py-2 px-4 bg-red-700 hover:bg-red-500 text-white font-medium rounded ml-2">
                   Delete
                   </button>

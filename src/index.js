@@ -5,8 +5,28 @@ const cors=require("cors")
 const jwt=require('jsonwebtoken')
 app.use(cors())
 app.use(express.json())
+const mongoose=require('mongoose')
 const port=3000
 
+
+
+
+mongoose.connect('mongodb://127.0.0.1:27017/courses', { useNewUrlParser: true, useUnifiedTopology: true, dbName: "courses" });
+const adminSchema=new mongoose.Schema({
+  email: String,
+  password: String
+})
+
+const courseSchema=new mongoose.Schema({
+  title: String,
+    description: String,
+    price: Number,
+    image: String,
+    published: Boolean
+})
+
+const Admin=new mongoose.model('Admin',adminSchema)
+const Course=new mongoose.model('Course',courseSchema)
 const adminSecretKey="admin"
 
 let generateJWTForAdmin=(admindetails)=>{
@@ -32,153 +52,103 @@ let AuthenticateJWTforAdmin=(req,res,next)=>{
 }
 }
 
-app.get("/admin/me",AuthenticateJWTforAdmin,(req,res)=>{
-  return  res.status(201).json({message:"success",email:req.admin.email})
+app.get("/admin/me",AuthenticateJWTforAdmin,async(req,res)=>{
+  const admin = await Admin.findOne({ email: req.admin.email });
+  if (!admin) {
+    res.status(403).json({msg: "Admin doesnt exist"})
+    return
+  }
+  res.json({message:"success",
+      email: admin.email
+  })
 })
 
-app.post("/admin/signup", (req, res) => {
+app.post("/admin/signup",async (req, res) => {
     const{email,password}=req.body
     if(email.length<5 || password.length<5){
       return res.status(404).json({message:"Invalid"})
     }
-    fs.readFile("admindata.txt","utf-8",(err,data)=>{
-      if(data){
-      data=JSON.parse(data)
-      const admin=data.find(data=>data.email==email)
-      if(admin){
-        return res.status(404).json({message:"Admin already Exists"})
-     
-      }
+    const admin=await Admin.findOne({ email })
+    if(admin){
+      res.status(403).json({ message: 'Admin already exists' });
+    }else{
+      const obj = { email: email, password: password };
+      const newAdmin = new Admin(obj);
+      newAdmin.save();
+      let adminToken=generateJWTForAdmin(obj)
+      return  res.status(201).json({message:"success",token:adminToken})
     }
-        let newAdmin={
-          email : email,
-          password : password
-        }
-        let adminToken=generateJWTForAdmin(newAdmin)
-        data.push(newAdmin)
-      
-        fs.writeFile("admindata.txt",JSON.stringify(data),(err)=>{
-          if(err){
-             return res.status(404).json({message:"Admin already Exists"})
-          }else{
-           return  res.status(201).json({message:"success",token:adminToken})
-          }
-          
-        })
-      })
-    })
+     })
 
-   app.post("/admin/login",(req,res)=>{
+   app.post("/admin/login",async(req,res)=>{
     const{email,password}=req.body
-    fs.readFile("admindata.txt","utf-8",(err,data)=>{
-        if(data){
-            data=JSON.parse(data)
-            const admin=data.find(data=>data.email==email && data.password==password)
-            if(admin){
-              let adminToken=generateJWTForAdmin(admin)
-                res.status(200).json({message:"success",token:adminToken})
-            }else{
-                res.status(404).json({message:"failed"})
-            }
-        }
-    })
-   })
+    if(email.length<5 || password.length<5){
+      return res.status(404).json({message:"Invalid"})
+    }
+    const admin=await Admin.findOne({ email,password })
+    if(admin){
+      const obj = { email: admin.email, password: admin.password };
+      let adminToken=generateJWTForAdmin(obj)
+      res.status(200).json({message:"success",token:adminToken})
+    }else{
+      res.status(404).json({message:"failed"})
+  }
+     })
 
    app.post('/admin/create',AuthenticateJWTforAdmin,(req, res) => {
     const body = req.body;
     if(body.title.length<3 ||body.description.length<6){
       return res.status(404).json({message:"failed"})
     }else{
-    fs.readFile("coursesdata.txt", "utf-8", (err, data) => {
-      if (err) {
-        return res.status(404).json({message:"failed"})
-      } else {
-        if(data){
-          data = JSON.parse(data)
-        }
-        body['id']=parseInt(Date.now())
-          data.push(body)
-        fs.writeFile("coursesdata.txt", JSON.stringify(data), (err) => {
-          if (err) {
-            return res.status(404).json({message:"failed"})
-          }
-          return res.status(200).json({message:"success"})
-        });
-      
+      const course=new Course(req.body)
+      course.save()
+      return res.status(200).json({message:"success"})
     }
-  
-    });
-  }
+  })
+    
+
+  app.get("/admin/courses",async (req,res)=>{
+    const data = await Course.find({});
+    if(data){
+    
+     return res.json({ data:data,message:"success" });
+    }
+    })
+
+
+  app.get("/admin/courses/:id",AuthenticateJWTforAdmin,async(req,res)=>{
+    const id = req.params.id; 
+    const course = await Course.findById(id);
+    if(course){
+      res.json({ course:course,message:"success" });
+    }else {
+      res.status(404).json({ message: 'Course not found' });
+    }
+   
+  })
+   
+    
+  app.post("/admin/courses/:id",AuthenticateJWTforAdmin,async(req,res)=>{
+
+    
+    const course = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (course) {
+      return res.status(200).json({message:"success"})
+    } else {
+      res.status(404).json({ message: 'Course not found' });
+    }
   });
 
-  app.get("/admin/courses",(req,res)=>{
-    fs.readFile("coursesdata.txt","utf-8",(err,data)=>{
-      if(data){
-        data=JSON.parse(data)
-       
-      }
-      res.status(200).json(data)
-    })
-  })
-
-  app.get("/admin/courses/:id",AuthenticateJWTforAdmin,(req,res)=>{
-    const id = req.params.id; 
-
-   
-    fs.readFile("coursesdata.txt","utf-8",(err,data)=>{
-      if(data){
-        data=JSON.parse(data)
-      }
-      const course=data.find((course)=>course.id==id)
-      if(course){
-       return res.status(200).json({message:"success",course:course})
-      }else{
-        return res.status(403).json({message:"failed"})
-      }
-    })
-  })
-
-  app.post("/admin/courses/:id",AuthenticateJWTforAdmin,(req,res)=>{
-    const id = parseInt(req.params.id); 
-    const body=req.body;
-    if(body.title.length<3 ||body.description.length<6){
-      return res.status(401).json({message:"failed"})
-    }
-    fs.readFile("coursesdata.txt","utf-8",(err,data)=>{
-      if(data){
-        data=JSON.parse(data)
-      }
-      const course=data.find((course)=>course.id==id)
-      
-      if(course){
-       Object.assign(course,body)
-        fs.writeFile("coursesdata.txt", JSON.stringify(data),(err) => {})
-           res.status(200).json({message:"success"})
-      }else{
-        return res.status(402).json({message:"failed"})
-      }
-    })
-  })
-
   app.delete("/admin/courses/delete/:id",AuthenticateJWTforAdmin,(req,res)=>{
-    const id=parseInt(req.params.id)
-    fs.readFile("coursesdata.txt","utf-8",(err,data)=>{
-      if(data){
-        data=JSON.parse(data)
-        let courses=data.filter(data=>data.id!=id)
-        fs.writeFile("coursesdata.txt",JSON.stringify(courses),(err)=>{
-          if(err){
-            return res.status(404).json({message:"failed"})
-          }else{
-            return res.status(200).json({message:"success"})
-          }
-        })
-      }else{
-        return res.status(404).json({message:"failed"})
-      }
-     
-    })
+    try {
+       Course.findByIdAndDelete(req.params.id).then(()=>{return res.status(200).json({ message: "success" })})
+      
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+    
   })
+    
 
 
 app.listen(port,()=>{console.log(`server running on port ${port}`)})

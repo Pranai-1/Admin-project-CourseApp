@@ -17,7 +17,7 @@ function Signup() {
         password: password,
       });
 
-      if (res.data.message === 'success') {
+      if (res.data.message == 'success') {
         alert("signup successful");
         navigate('/admin/login');
       } else {
