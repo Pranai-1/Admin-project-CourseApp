@@ -78,7 +78,7 @@ import { IsLoading} from "../store/selectors/isLoading"
       adminEmail:null
     })
    
-    navigate("/admin/")
+    navigate("/")
    }} 
    className="p-1 m-2  h-max w-auto bg-indigo-600 rounded hover:bg-indigo-800 text-white cursor-pointer mr-7">
     Logout</button>
