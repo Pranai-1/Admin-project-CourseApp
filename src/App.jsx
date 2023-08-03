@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './components/landing';
+import Landing from './components/Landing';
 import Signup from './components/Signup';
 import Login from './components/Login';
 import CreateCourses from './components/Createcourses';
@@ -8,6 +8,7 @@ import UpdateCourses from './components/UpdateCourses';
 import Navbar from './components/navbar';
 import React from 'react';
 import { AdminState } from './store/atoms/admin';
+import Default from './components/Default';
 import {
   RecoilRoot,
   atom,
@@ -27,6 +28,7 @@ function App() {
             <InitUser/>
             <Navbar />
             <Routes>
+            <Route  path="/" element={<Default />} />
                 <Route  path="/admin/" element={<Landing />} />
                 <Route path="/admin/login" element={<Login />} />
                 <Route path="/admin/signup" element={<Signup />} />

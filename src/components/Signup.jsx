@@ -21,6 +21,7 @@ function Signup() {
         alert("signup successful");
         navigate('/admin/login');
       } else {
+        console.log(res.data)
         alert("signup failed");
       }
     } catch (error) {
