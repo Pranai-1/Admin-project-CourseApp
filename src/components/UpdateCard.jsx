@@ -8,11 +8,39 @@ import { CourseState } from "../store/atoms/Course";
 function UpdateCard(props) {
   const courseState = useSetRecoilState(CourseState);
   const courseDetails = useRecoilValue(CourseDetails);
+  // In this case, courseDetails is obtained from useRecoilValue(CourseDetails),
+  //  which also provides the current value of the Recoil selector CourseDetails. 
+  //  However, instead of using courseDetails directly, it extracts the title property
+  //   and initializes the title state with that value. The potential issue here is 
+  //   that courseDetails might not have the latest value available at the time of rendering.
+  //    Recoil selectors are synchronous but can depend on asynchronous operations or external data
+  //     sources, which might cause a delay in updating the value.
+
+
+
+
+
+//   const courseTitle = useRecoilValue(CourseTitle); const [title, setTitle] = useState(courseTitle);
+// In the case of courseTitle is directly obtained from useRecoilValue(CourseTitle),
+//  which provides the current value of the Recoil selector CourseTitle. 
+//  Since useRecoilValue is synchronous and returns the current value immediately, 
+//  this approach will work correctly, and title will be initialized with the latest 
+//  value of CourseTitle at the time of rendering.
+
+
+
   const [title, setTitle] = useState(courseDetails.title);
   const [description, setDescription] = useState(courseDetails.description);
   const [price, setPrice] = useState(courseDetails.price);
   const [image, setImage] = useState(courseDetails.image);
   const [published, setPublished] = useState(courseDetails.published);
+  useEffect(() => {
+    setTitle(courseDetails.title);
+    setDescription(courseDetails.description);
+    setPrice(courseDetails.price);
+    setImage(courseDetails.image);
+    setPublished(courseDetails.published);
+  }, [courseDetails]);
 
   async function Submit() {
     let token = localStorage.getItem('token');

@@ -9,7 +9,9 @@ const adminSchema=new mongoose.Schema({
       description: String,
       price: Number,
       image: String,
-      published: Boolean
+      published: Boolean,
+      adminId: String,
+     
   })
   
   const Admin=new mongoose.model('Admin',adminSchema)

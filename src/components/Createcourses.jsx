@@ -13,7 +13,7 @@ function CreateCourses(){
     
     async function Create() {
         let token = localStorage.getItem('token');
-        console.log(token);
+       
         const config = {
           headers: {
             "Authorization": `Bearer ${token}`

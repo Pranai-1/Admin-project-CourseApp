@@ -9,6 +9,7 @@ import Navbar from './components/navbar';
 import React from 'react';
 import { AdminState } from './store/atoms/admin';
 import Default from './components/Default';
+import CreatedByInvidual from './components/createdByInvidual';
 import {
   RecoilRoot,
   atom,
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/admin/signup" element={<Signup />} />
                 <Route path="/admin/create" element={<CreateCourses />} />
                 <Route path="/admin/courses" element={<ShowCourses />} />
+                <Route path="/admin/createdByInvidual" element={<CreatedByInvidual />} />
                 <Route path="/admin/courses/:id" element={<UpdateCourses />} />
                 
             </Routes>
