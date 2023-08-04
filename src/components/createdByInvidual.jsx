@@ -14,6 +14,26 @@ function CreatedByInvidual(){
         setIndividualcourses(res.data.data)
     })
     })
+
+
+    const Delete = async (id) => {
+        let token = localStorage.getItem('token');
+        try {
+          const response = await axios.delete(`http://localhost:3000/admin/courses/delete/${id}`, {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+           console.log(response.data)
+          if (response.data.message == "success") {
+            const updatedCourses = individualcourses.filter((course) => course._id !== id);
+            setIndividualcourses(updatedCourses);
+          }
+        } catch (error) {
+          // Handle error if something goes wrong with the request
+          console.error("Error deleting course:", error);
+        }
+      };
     
 return(
     <>

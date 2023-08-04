@@ -43,6 +43,7 @@ const router=express.Router()
        if(email.length<5 || password.length<5){
          return res.status(404).json({message:"Invalid"})
        }
+       
        const admin=await Admin.findOne({ email,password })
        if(admin){
          let adminToken=jwt.sign({id:admin._id},adminSecretKey,{expiresIn:'1h'})
@@ -52,15 +53,23 @@ const router=express.Router()
      }
         })
    
-    router.post('/create',AuthenticateJWTforAdmin,(req, res) => {
+    router.post('/create',AuthenticateJWTforAdmin,async (req, res) => {
        const body = req.body;
        if(body.title.length<3 ||body.description.length<6){
          return res.status(404).json({message:"failed"})
        }else{
-        let obj={...req.body,adminId:req.adminId}
+      
+        const admin=await Admin.findOne({ _id:req.adminId})
+       
+        if(admin){
+        
+          const name=admin.email.split('@')[0]
+          let obj={...req.body,adminId:req.adminId,name:name}
          const course=new Course(obj)
          course.save()
          return res.status(200).json({message:"success"})
+        }
+        
        }
      })
        
