@@ -70,6 +70,13 @@ function UpdateCourses(){
 
 function BlueTopper(){
   const courseTitle=useRecoilValue(CourseTitle)
+  useEffect(() => {
+     
+    axios.get("http://localhost:3000/admin/courses").then((res) => {
+    
+        setCourses(res.data.data);
+      });
+}, []);
   return(
   <>
   <div className="h-[300px] w-screen bg-indigo-200 flex justify-center items-center">

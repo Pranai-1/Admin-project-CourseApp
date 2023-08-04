@@ -6,15 +6,12 @@ const {adminSecretKey}=require("../middleware/auth")
 const {AuthenticateJWTforAdmin}=require("../middleware/auth")
 const router=express.Router()
 
-let generateJWTForAdmin=(admindetails)=>{
-    let adminToken=jwt.sign(admindetails,adminSecretKey,{expiresIn:'1h'})
-    return adminToken
-   }
+
    
   
    
    router.get("/me",AuthenticateJWTforAdmin,async(req,res)=>{
-     const admin = await Admin.findOne({ email: req.admin.email });
+     const admin = await Admin.findOne({ _id:req.adminId });
      if (!admin) {
        res.status(403).json({msg: "Admin doesnt exist"})
        return
@@ -33,10 +30,10 @@ let generateJWTForAdmin=(admindetails)=>{
        if(admin){
          res.status(403).json({ message: 'Admin already exists' });
        }else{
-         const obj = { email: email, password: password };
+        let obj={email,password}
          const newAdmin = new Admin(obj);
          newAdmin.save();
-         let adminToken=generateJWTForAdmin(obj)
+         let adminToken=jwt.sign({id:newAdmin._id},adminSecretKey,{expiresIn:'1h'})
          return  res.status(201).json({message:"success",token:adminToken})
        }
         })
@@ -48,8 +45,7 @@ let generateJWTForAdmin=(admindetails)=>{
        }
        const admin=await Admin.findOne({ email,password })
        if(admin){
-         const obj = { email: admin.email, password: admin.password };
-         let adminToken=generateJWTForAdmin(obj)
+         let adminToken=jwt.sign({id:admin._id},adminSecretKey,{expiresIn:'1h'})
          res.status(200).json({message:"success",token:adminToken})
        }else{
          res.status(404).json({message:"failed"})
@@ -61,7 +57,8 @@ let generateJWTForAdmin=(admindetails)=>{
        if(body.title.length<3 ||body.description.length<6){
          return res.status(404).json({message:"failed"})
        }else{
-         const course=new Course(req.body)
+        let obj={...req.body,adminId:req.adminId}
+         const course=new Course(obj)
          course.save()
          return res.status(200).json({message:"success"})
        }
@@ -75,6 +72,14 @@ let generateJWTForAdmin=(admindetails)=>{
         return res.json({ data:data,message:"success" });
        }
        })
+
+    router.get("/courses/individual",AuthenticateJWTforAdmin,async (req,res)=>{
+      const data=await Course.find({adminId:req.adminId})
+      if(data){
+       
+        return res.json({ data:data,message:"success" });
+       }
+    })
    
    
  router.get("/courses/:id",AuthenticateJWTforAdmin,async(req,res)=>{

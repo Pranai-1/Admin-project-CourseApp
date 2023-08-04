@@ -34,7 +34,7 @@ import { IsLoading} from "../store/selectors/isLoading"
             &#8801;
           </div>
           {showSidebar && (
-        <div className="fixed top-[45px] left-0 w-[200px] h-screen bg-indigo-100 p-4 z-0">
+        <div className="fixed top-[45px] left-0 w-[200px] h-screen p-4">
           {/* Sidebar content */}
           <ul className="text-white">
             <li onClick={()=>{
@@ -47,6 +47,16 @@ import { IsLoading} from "../store/selectors/isLoading"
             } 
               className="font-medium p-2 cursor-pointer text-blue-700 hover:text-red-600">
                 Create Course</li>
+                <li onClick={()=>{
+              if(adminEmail){
+              navigate('/admin/createdByInvidual')
+              }else{
+                alert("Login to continue")
+              }
+            }
+            } 
+              className="font-medium p-2 cursor-pointer text-blue-700 hover:text-red-600">
+                Your Courses</li>
             <li onClick={()=>{
               if(adminEmail){
               navigate('/admin/courses')
@@ -54,7 +64,9 @@ import { IsLoading} from "../store/selectors/isLoading"
                 alert("Login to continue")
               }
             }
-            }  className="font-medium p-2 cursor-pointer  text-blue-700 hover:text-red-600">Courses</li>
+            }  className="font-medium p-2 cursor-pointer  text-blue-700 hover:text-red-600">
+              All Courses</li>
+              
             
             {/* Add more items as needed */}
           </ul>

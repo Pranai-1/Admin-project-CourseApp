@@ -14,7 +14,7 @@ let AuthenticateJWTforAdmin=(req,res,next)=>{
       if(err){
         return res.status(403).json({message:"Invalid"})
       }else{
-        req.admin=admin
+        req.adminId=admin.id
         next()
       }
     })
