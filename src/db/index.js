@@ -11,6 +11,7 @@ const adminSchema=new mongoose.Schema({
       image: String,
       published: Boolean,
       adminId: String,
+      name:String,
      
   })
   
