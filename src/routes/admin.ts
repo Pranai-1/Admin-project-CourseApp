@@ -4,6 +4,7 @@ import { Course, Admin } from "../db"; // Assuming these are separate modules
 import jwt from 'jsonwebtoken';
 import { adminSecretKey } from "../middleware/auth";
 import { AuthenticateJWTforAdmin } from "../middleware/auth";
+import {z} from "zod"
 
 interface admin extends Document {
   _id?: string;
@@ -12,9 +13,13 @@ interface admin extends Document {
 }
 
 
+
 const router:Router=express.Router()
 
-
+const adminInput=z.object({
+  email:z.string().min(10).max(40).email(),
+  password:z.string().min(5).max(40)
+})
    
    router.get("/me",AuthenticateJWTforAdmin,async(req,res)=>{
     const adminId:string=req.headers["adminId"] as string
@@ -29,10 +34,12 @@ const router:Router=express.Router()
    })
    
    router.post("/signup",async (req, res) => {
-       const{email,password}=req.body
-       if(email.length<5 || password.length<5){
-         return res.status(404).json({message:"Invalid"})
-       }
+    const parsedInput=adminInput.safeParse(req.body)
+    if(!parsedInput.success){
+      return res.status(404).json({message:parsedInput.error.message})
+    }
+       const email=parsedInput.data.email
+       const password=parsedInput.data.password
        const admin:admin | null=await Admin.findOne({ email })
        if(admin){
          res.status(403).json({ message: 'Admin already exists' });
@@ -46,10 +53,12 @@ const router:Router=express.Router()
         })
    
  router.post("/login",async(req,res)=>{
-       const{email,password}=req.body
-       if(email.length<5 || password.length<5){
-         return res.status(404).json({message:"Invalid"})
-       }
+  const parsedInput=adminInput.safeParse(req.body)
+  if(!parsedInput.success){
+    return res.status(404).json({message:parsedInput.error.message})
+  }
+     const email=parsedInput.data.email
+     const password=parsedInput.data.password
        
        const admin:admin | null=await Admin.findOne({ email,password })
        if(admin){
