@@ -8,7 +8,7 @@ export const adminSecretKey: string = "admin";
   
 export const AuthenticateJWTforAdmin=(req:Request,res:Response,next:NextFunction)=>{
   let authHeader: string | undefined = req.headers.authorization;
-   
+ 
     if(authHeader){
       const token: string = authHeader.split(' ')[1];
     jwt.verify(token,adminSecretKey,(err,admin)=>{
@@ -21,6 +21,7 @@ export const AuthenticateJWTforAdmin=(req:Request,res:Response,next:NextFunction
       if(typeof admin=="string"){
         return res.status(403).json({message:"Invalid"})
       }
+
         req.headers["adminId"]=admin.id
         next()
       

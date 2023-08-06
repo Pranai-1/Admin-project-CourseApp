@@ -17,7 +17,12 @@ const db_1 = require("../db"); // Assuming these are separate modules
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_1 = require("../middleware/auth");
 const auth_2 = require("../middleware/auth");
+const zod_1 = require("zod");
 const router = express_1.default.Router();
+const adminInput = zod_1.z.object({
+    email: zod_1.z.string().min(10).max(40).email(),
+    password: zod_1.z.string().min(5).max(40)
+});
 router.get("/me", auth_2.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const adminId = req.headers["adminId"];
     const admin = yield db_1.Admin.findOne({ _id: adminId });
@@ -30,10 +35,12 @@ router.get("/me", auth_2.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0
     });
 }));
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password } = req.body;
-    if (email.length < 5 || password.length < 5) {
-        return res.status(404).json({ message: "Invalid" });
+    const parsedInput = adminInput.safeParse(req.body);
+    if (!parsedInput.success) {
+        return res.status(404).json({ message: parsedInput.error.message });
     }
+    const email = parsedInput.data.email;
+    const password = parsedInput.data.password;
     const admin = yield db_1.Admin.findOne({ email });
     if (admin) {
         res.status(403).json({ message: 'Admin already exists' });
@@ -46,10 +53,12 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 }));
 router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password } = req.body;
-    if (email.length < 5 || password.length < 5) {
-        return res.status(404).json({ message: "Invalid" });
+    const parsedInput = adminInput.safeParse(req.body);
+    if (!parsedInput.success) {
+        return res.status(404).json({ message: parsedInput.error.message });
     }
+    const email = parsedInput.data.email;
+    const password = parsedInput.data.password;
     const admin = yield db_1.Admin.findOne({ email, password });
     if (admin) {
         let adminToken = jsonwebtoken_1.default.sign({ id: admin._id }, auth_1.adminSecretKey, { expiresIn: '1h' });
