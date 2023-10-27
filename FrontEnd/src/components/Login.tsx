@@ -29,6 +29,7 @@ function Login() {
         password: password
      
     })
+  
     const data:login=res.data
       if (data.message === 'success') {
           localStorage.setItem("token",data.token)
@@ -37,6 +38,7 @@ function Login() {
             isLoading:false,
             adminEmail:res.data.email
           })
+     
           navigate("/admin/")
          
         } else {

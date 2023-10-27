@@ -13,26 +13,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const db_1 = require("../db"); // Assuming these are separate modules
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_1 = require("../middleware/auth");
 const auth_2 = require("../middleware/auth");
 const zod_1 = require("zod");
+const client_1 = require("@prisma/client");
 const router = express_1.default.Router();
+const prisma = new client_1.PrismaClient();
 const adminInput = zod_1.z.object({
     email: zod_1.z.string().min(10).max(40).email(),
     password: zod_1.z.string().min(5).max(40)
 });
 router.get("/me", auth_2.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const adminId = req.headers["adminId"];
-    const admin = yield db_1.Admin.findOne({ _id: adminId });
-    if (!admin) {
-        res.status(403).json({ msg: "Admin doesnt exist" });
-        return;
+    const adminId = Number(req.headers["adminId"]);
+    try {
+        const admin = yield prisma.admin.findFirst({ where: { id: adminId } });
+        if (!admin) {
+            res.status(404).json({ msg: "Admin doesnt exist" });
+            return;
+        }
+        else {
+            res.json({ message: "success",
+                email: admin.email
+            });
+        }
     }
-    res.json({ message: "success",
-        email: admin.email
-    });
+    catch (_a) {
+        res.status(404).json({ msg: "Admin doesnt exist" });
+    }
+    finally {
+        prisma.$disconnect();
+    }
 }));
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const parsedInput = adminInput.safeParse(req.body);
@@ -41,15 +52,37 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
     const email = parsedInput.data.email;
     const password = parsedInput.data.password;
-    const admin = yield db_1.Admin.findOne({ email });
-    if (admin) {
-        res.status(403).json({ message: 'Admin already exists' });
+    try {
+        const present = yield prisma.admin.findFirst({
+            where: {
+                email
+            }
+        });
+        if (present) {
+            res.status(403).json({ message: 'Admin already exists' });
+        }
+        else {
+            const admin = yield prisma.admin.create({
+                data: {
+                    email,
+                    password
+                }
+            });
+            if (admin) {
+                let adminToken = jsonwebtoken_1.default.sign({ id: admin.id }, auth_1.adminSecretKey, { expiresIn: '1h' });
+                return res.status(201).json({ message: "success", token: adminToken });
+            }
+            else {
+                res.status(404).json({ message: 'Failed' });
+            }
+        }
     }
-    else {
-        const newAdmin = new db_1.Admin({ email, password });
-        newAdmin.save();
-        let adminToken = jsonwebtoken_1.default.sign({ id: newAdmin._id }, auth_1.adminSecretKey, { expiresIn: '1h' });
-        return res.status(201).json({ message: "success", token: adminToken });
+    catch (error) {
+        console.log(error);
+        res.status(404).json({ message: 'Failed' });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -59,13 +92,22 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
     const email = parsedInput.data.email;
     const password = parsedInput.data.password;
-    const admin = yield db_1.Admin.findOne({ email, password });
-    if (admin) {
-        let adminToken = jsonwebtoken_1.default.sign({ id: admin._id }, auth_1.adminSecretKey, { expiresIn: '1h' });
-        res.status(200).json({ message: "success", token: adminToken });
+    try {
+        const admin = yield prisma.admin.findFirst({ where: { email, password } });
+        if (admin) {
+            let adminToken = jsonwebtoken_1.default.sign({ id: admin.id }, auth_1.adminSecretKey, { expiresIn: '1h' });
+            res.status(200).json({ message: "success", token: adminToken, email: email });
+        }
+        else {
+            res.status(404).json({ message: "failed" });
+        }
     }
-    else {
+    catch (error) {
+        console.log(error);
         res.status(404).json({ message: "failed" });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 exports.default = router;

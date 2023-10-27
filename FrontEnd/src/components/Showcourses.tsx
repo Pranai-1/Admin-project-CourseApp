@@ -4,19 +4,16 @@ import axios from "axios";
 
 
 interface Course {
-  _id: string;
+  id: number;
   title: string;
   description: string;
   image: string;
   published: boolean,
   adminId: string,
   name:string,
+  price:number
 }
 
-interface response{
-  message:string,
-  courses?:Course[]
-}
 
 
 
@@ -46,7 +43,7 @@ function ShowCourses() {
      {courses.length==0?(
           <>
           <div className="h-screen w-screen flex  justify-center items-center ">
-           <p className="text-2xl text-blue-600 font-bold h-max w-max  ">You haven't created any Course</p>
+           <p className="text-2xl text-blue-600 font-bold h-max w-max  ">Courses are not available</p>
            </div>
           </>
         ):(
@@ -55,7 +52,7 @@ function ShowCourses() {
         <p className="text-xl text-blue-600 font-bold p-3 w-screen mt-3 flex justify-center">All Courses</p>
         <div className=" p-3 flex flex-wrap justify-center">
           {courses.map((course) => (
-            <div key={course._id}  className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
+            <div key={course.id}  className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
               <img className="h-[160px] w-full object-cover" src={course.image} alt="Course" />
               <div className="p-3 pb-0 h-[100px] m-0">
                 <h2 className="font-bold w-full text-xl text-blue-700">{course.title}</h2>

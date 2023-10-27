@@ -11,7 +11,6 @@ import { IsLoading} from "../store/selectors/isLoading"
  const adminEmail=useRecoilValue(AdminEmail)
  const isLoading=useRecoilValue(IsLoading)
  const adminState=useSetRecoilState(AdminState)
- 
  const toggleSidebar = () => {
     setShowSidebar((prevShowSidebar) => !prevShowSidebar);
   }
@@ -23,7 +22,7 @@ import { IsLoading} from "../store/selectors/isLoading"
       Loading.....
       </>
     )}
- {/* navbar starting..... */}
+
  <div className="fixed w-screen h-[45px] bg-indigo-400 flex justify-between">
   <div className="flex">
   <div
