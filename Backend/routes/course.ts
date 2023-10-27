@@ -2,25 +2,11 @@ import express from "express";
 import jwt from 'jsonwebtoken';
 import { adminSecretKey } from "../middleware/auth";
 import { AuthenticateJWTforAdmin } from "../middleware/auth";
-import { Course, Admin } from "../db"; // Assuming these are separate modules
 import {z} from "zod"
+import { PrismaClient } from "@prisma/client";
 const router = express.Router();
 
-interface course {
-  title: string;
-  description: string;
-  price: number;
-  image: string;
-  published: boolean;
-}
-
-interface admin extends Document {
-  _id?: string;
-  email: string;
-  password: string;
-}
-
-
+const prisma=new PrismaClient()
 const courseInput=z.object({
   title:z.string().min(5).max(40),
   description: z.string().min(5).max(40),
@@ -37,87 +23,181 @@ router.post('/create',AuthenticateJWTforAdmin,async (req, res) => {
   if(!parsedInput.success){
     return res.status(404).json({message:parsedInput.error.message})
   }
-     const{title,description,price,image,published}=parsedInput.data
-       let obj={ title,description,price,image,published}
-    const body:course =obj;
-   
-     const admin:admin | null=await Admin.findOne({ _id:req.headers["adminId"]})
+     let{title,description,price,image,published}=parsedInput.data
+    price=Number(price)
+    try{
+     const admin=await prisma.admin.findFirst({ where:{id:Number(req.headers["adminId"])}})
     
      if(admin){
-     
        const name=admin.email.split('@')[0]
-       let newObj={...body,adminId:req.headers["adminId"],name:name}
-      const course=new Course(newObj)
-      course.save()
+      const course=await prisma.courses.create({
+        data:{        
+          title ,       
+          description,  
+          price ,     
+          image ,      
+          published,    
+          adminId:admin.id,   
+          name         
+        }
+      })
+     if(course){
       return res.status(200).json({message:"success"})
      }else {
       res.status(404).json({ message: 'failed' });
     }
+  }else{
+    res.status(404).json({ message: 'failed' });
+  }
+}
+    catch(error){
+ console.log(error)
+ res.status(404).json({ message: 'failed' });
+  }finally{
+    prisma.$disconnect()
+  }
      
     
   })
     
 
  router.get("/",async (req,res)=>{
-    const data = await Course.find({});
+  try{
+    const data = await prisma.courses.findMany({});
     if(data){
-    
      return res.json({ data:data,message:"success" });
     }else {
       res.status(404).json({ message: 'Course not found' });
     }
+  }catch(error){
+  console.log(error)
+  res.status(404).json({ message: 'Course not found' });
+  }finally{
+    prisma.$disconnect()
+  }
     })
 
+
  router.get("/individual",AuthenticateJWTforAdmin,async (req,res)=>{
-   const data=await Course.find({adminId:req.headers["adminId"]})
+  try{
+   const data=await prisma.courses.findMany({
+    where:
+    {
+    adminId:Number(req.headers["adminId"])
+  }
+  })
    if(data){
     
      return res.json({ courses:data,message:"success" });
     }else {
       res.status(404).json({ message: 'Course not found' });
     }
+  }catch(error){
+    console.log(error)
+    res.status(404).json({ message: 'Course not found' });
+    }finally{
+      prisma.$disconnect()
+    }
  })
 
 
 router.get("/:id",AuthenticateJWTforAdmin,async(req,res)=>{
-    const id = req.params.id; 
-    const course = await Course.findById(id);
+    const id = Number(req.params.id); 
+    try{
+    const course = await prisma.courses.findFirst({
+      where:{
+            id
+      }
+     });
     if(course){
       res.json({ course:course,message:"success" });
     }else {
       res.status(404).json({ message: 'Course not found' });
     }
+  }catch(error){
+    console.log(error)
+    res.status(404).json({ message: 'Course not found' });
+    }finally{
+      prisma.$disconnect()
+    }
    
   })
    
     
-router.post("/:id",AuthenticateJWTforAdmin,async(req,res)=>{
-
-  const parsedInput=courseInput.safeParse(req.body)
-  if(!parsedInput.success){
-    return res.status(404).json({message:parsedInput.error.message})
-  }
-     const{title,description,price,image,published}=parsedInput.data
-       let obj={ title,description,price,image,published}
-    const body:course =obj;
-    
-    const course = await Course.findByIdAndUpdate(req.params.id, body, { new: true });
-    if (course) {
-      return res.status(200).json({message:"success"})
-    } else {
-      res.status(404).json({ message: 'Course not found' });
+  router.post("/:id", AuthenticateJWTforAdmin, async (req, res) => {
+    const parsedInput = courseInput.safeParse(req.body);
+    if (!parsedInput.success) {
+      return res.status(400).json({ message: parsedInput.error.message });
+    }
+    const { title, description, price, image, published } = parsedInput.data;
+    const courseId = Number(req.params.id);
+  
+    try {
+      const existingCourse = await prisma.courses.findFirst({
+        where: {
+          id: courseId,
+        },
+      });
+  
+      if (existingCourse) {
+        const updatedCourse = await prisma.courses.update({
+          where: {
+            id: courseId,
+          },
+          data: {
+            title,
+            description,
+            price,
+            image,
+            published,
+          },
+        });
+  
+        return res.status(200).json({ message: "Course updated successfully" });
+      } else {
+        // Course not found
+        res.status(404).json({ message: 'Course not found' });
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    } finally {
+      await prisma.$disconnect();
     }
   });
+  
 
-router.delete("/delete/:id",AuthenticateJWTforAdmin,(req,res)=>{
+  router.delete("/delete/:id", AuthenticateJWTforAdmin, async (req, res) => {
+    const courseId = Number(req.params.id);
+  
     try {
-       Course.findByIdAndDelete(req.params.id).then(()=>{return res.status(200).json({ message: "success" })})
-      
+      const existingCourse = await prisma.courses.findFirst({
+        where: {
+          id: courseId,
+        },
+      });
+  
+      if (existingCourse) {
+       
+        await prisma.courses.delete({
+          where: {
+            id: courseId,
+          },
+        });
+  
+        return res.status(200).json({ message: "Course deleted successfully" });
+      } else {
+       
+        res.status(404).json({ message: 'Course not found' });
+      }
     } catch (error) {
-      return res.status(500).json({ message: "Server error" });
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    } finally {
+      await prisma.$disconnect();
     }
-    
-  })
+  });
+  
 
   export default router
    

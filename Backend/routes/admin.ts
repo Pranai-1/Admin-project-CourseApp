@@ -1,20 +1,13 @@
-import mongoose, { Model } from "mongoose";
+
 import express, { Router } from "express";
-import { Course, Admin } from "../db"; // Assuming these are separate modules
 import jwt from 'jsonwebtoken';
 import { adminSecretKey } from "../middleware/auth";
 import { AuthenticateJWTforAdmin } from "../middleware/auth";
 import {z} from "zod"
-
-interface admin extends Document {
-  _id?: string;
-  email: string;
-  password: string;
-}
-
-
+import { PrismaClient } from "@prisma/client";
 
 const router:Router=express.Router()
+const prisma=new PrismaClient()
 
 const adminInput=z.object({
   email:z.string().min(10).max(40).email(),
@@ -22,15 +15,23 @@ const adminInput=z.object({
 })
    
    router.get("/me",AuthenticateJWTforAdmin,async(req,res)=>{
-    const adminId:string=req.headers["adminId"] as string
-     const admin:admin | null= await Admin.findOne({ _id:adminId });
+    const adminId=Number(req.headers["adminId"])
+    try{
+     const admin= await prisma.admin.findFirst({ where:{id:adminId} });
      if (!admin) {
-       res.status(403).json({msg: "Admin doesnt exist"})
+       res.status(404).json({msg: "Admin doesnt exist"})
        return
-     }
+     }else{
      res.json({message:"success",
          email: admin.email
+     
      })
+    }
+  }catch{
+    res.status(404).json({msg: "Admin doesnt exist"})
+    }finally{
+      prisma.$disconnect()
+    }
    })
    
    router.post("/signup",async (req, res) => {
@@ -40,15 +41,34 @@ const adminInput=z.object({
     }
        const email=parsedInput.data.email
        const password=parsedInput.data.password
-       const admin:admin | null=await Admin.findOne({ email })
-       if(admin){
-         res.status(403).json({ message: 'Admin already exists' });
+       try{
+       const present=await prisma.admin.findFirst({
+        where:{
+          email
+        }
+       })
+       if(present){
+        res.status(403).json({ message: 'Admin already exists' });
        }else{
-       
-        const newAdmin = new Admin({ email, password });
-         newAdmin.save();
-         let adminToken=jwt.sign({id:newAdmin._id},adminSecretKey,{expiresIn:'1h'})
-         return  res.status(201).json({message:"success",token:adminToken})
+        const admin=await prisma.admin.create({
+          data:{
+            email,
+            password
+          }
+        })
+        if(admin){
+          let adminToken=jwt.sign({id:admin.id},adminSecretKey,{expiresIn:'1h'})
+          return  res.status(201).json({message:"success",token:adminToken})
+        }else{
+          res.status(404).json({ message: 'Failed' });
+        }
+      }
+        
+       }catch(error){
+        console.log(error)
+        res.status(404).json({ message: 'Failed' });
+       }finally{
+        prisma.$disconnect()
        }
         })
    
@@ -59,14 +79,20 @@ const adminInput=z.object({
   }
      const email=parsedInput.data.email
      const password=parsedInput.data.password
-       
-       const admin:admin | null=await Admin.findOne({ email,password })
+       try{
+       const admin=await prisma.admin.findFirst({where:{email,password} })
        if(admin){
-         let adminToken=jwt.sign({id:admin._id},adminSecretKey,{expiresIn:'1h'})
-         res.status(200).json({message:"success",token:adminToken})
+         let adminToken=jwt.sign({id:admin.id},adminSecretKey,{expiresIn:'1h'})
+         res.status(200).json({message:"success",token:adminToken,email:email})
        }else{
          res.status(404).json({message:"failed"})
      }
+    }catch(error){
+      console.log(error)
+      res.status(404).json({message:"failed"})
+    }finally{
+      prisma.$disconnect()
+    }
         })
    
    

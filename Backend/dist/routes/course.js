@@ -14,9 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const db_1 = require("../db"); // Assuming these are separate modules
 const zod_1 = require("zod");
+const client_1 = require("@prisma/client");
 const router = express_1.default.Router();
+const prisma = new client_1.PrismaClient();
 const courseInput = zod_1.z.object({
     title: zod_1.z.string().min(5).max(40),
     description: zod_1.z.string().min(5).max(40),
@@ -29,71 +30,172 @@ router.post('/create', auth_1.AuthenticateJWTforAdmin, (req, res) => __awaiter(v
     if (!parsedInput.success) {
         return res.status(404).json({ message: parsedInput.error.message });
     }
-    const { title, description, price, image, published } = parsedInput.data;
-    let obj = { title, description, price, image, published };
-    const body = obj;
-    const admin = yield db_1.Admin.findOne({ _id: req.headers["adminId"] });
-    if (admin) {
-        const name = admin.email.split('@')[0];
-        let newObj = Object.assign(Object.assign({}, body), { adminId: req.headers["adminId"], name: name });
-        const course = new db_1.Course(newObj);
-        course.save();
-        return res.status(200).json({ message: "success" });
+    let { title, description, price, image, published } = parsedInput.data;
+    price = Number(price);
+    try {
+        const admin = yield prisma.admin.findFirst({ where: { id: Number(req.headers["adminId"]) } });
+        if (admin) {
+            const name = admin.email.split('@')[0];
+            const course = yield prisma.courses.create({
+                data: {
+                    title,
+                    description,
+                    price,
+                    image,
+                    published,
+                    adminId: admin.id,
+                    name
+                }
+            });
+            if (course) {
+                return res.status(200).json({ message: "success" });
+            }
+            else {
+                res.status(404).json({ message: 'failed' });
+            }
+        }
+        else {
+            res.status(404).json({ message: 'failed' });
+        }
     }
-    else {
+    catch (error) {
+        console.log(error);
         res.status(404).json({ message: 'failed' });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const data = yield db_1.Course.find({});
-    if (data) {
-        return res.json({ data: data, message: "success" });
+    try {
+        const data = yield prisma.courses.findMany({});
+        if (data) {
+            return res.json({ data: data, message: "success" });
+        }
+        else {
+            res.status(404).json({ message: 'Course not found' });
+        }
     }
-    else {
+    catch (error) {
+        console.log(error);
         res.status(404).json({ message: 'Course not found' });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 router.get("/individual", auth_1.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const data = yield db_1.Course.find({ adminId: req.headers["adminId"] });
-    if (data) {
-        return res.json({ courses: data, message: "success" });
+    try {
+        const data = yield prisma.courses.findMany({
+            where: {
+                adminId: Number(req.headers["adminId"])
+            }
+        });
+        if (data) {
+            return res.json({ courses: data, message: "success" });
+        }
+        else {
+            res.status(404).json({ message: 'Course not found' });
+        }
     }
-    else {
+    catch (error) {
+        console.log(error);
         res.status(404).json({ message: 'Course not found' });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 router.get("/:id", auth_1.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = req.params.id;
-    const course = yield db_1.Course.findById(id);
-    if (course) {
-        res.json({ course: course, message: "success" });
+    const id = Number(req.params.id);
+    try {
+        const course = yield prisma.courses.findFirst({
+            where: {
+                id
+            }
+        });
+        if (course) {
+            res.json({ course: course, message: "success" });
+        }
+        else {
+            res.status(404).json({ message: 'Course not found' });
+        }
     }
-    else {
+    catch (error) {
+        console.log(error);
         res.status(404).json({ message: 'Course not found' });
+    }
+    finally {
+        prisma.$disconnect();
     }
 }));
 router.post("/:id", auth_1.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const parsedInput = courseInput.safeParse(req.body);
     if (!parsedInput.success) {
-        return res.status(404).json({ message: parsedInput.error.message });
+        return res.status(400).json({ message: parsedInput.error.message });
     }
     const { title, description, price, image, published } = parsedInput.data;
-    let obj = { title, description, price, image, published };
-    const body = obj;
-    const course = yield db_1.Course.findByIdAndUpdate(req.params.id, body, { new: true });
-    if (course) {
-        return res.status(200).json({ message: "success" });
-    }
-    else {
-        res.status(404).json({ message: 'Course not found' });
-    }
-}));
-router.delete("/delete/:id", auth_1.AuthenticateJWTforAdmin, (req, res) => {
+    const courseId = Number(req.params.id);
     try {
-        db_1.Course.findByIdAndDelete(req.params.id).then(() => { return res.status(200).json({ message: "success" }); });
+        const existingCourse = yield prisma.courses.findFirst({
+            where: {
+                id: courseId,
+            },
+        });
+        if (existingCourse) {
+            const updatedCourse = yield prisma.courses.update({
+                where: {
+                    id: courseId,
+                },
+                data: {
+                    title,
+                    description,
+                    price,
+                    image,
+                    published,
+                },
+            });
+            return res.status(200).json({ message: "Course updated successfully" });
+        }
+        else {
+            // Course not found
+            res.status(404).json({ message: 'Course not found' });
+        }
     }
     catch (error) {
-        return res.status(500).json({ message: "Server error" });
+        console.log(error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-});
+    finally {
+        yield prisma.$disconnect();
+    }
+}));
+router.delete("/delete/:id", auth_1.AuthenticateJWTforAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const courseId = Number(req.params.id);
+    try {
+        const existingCourse = yield prisma.courses.findFirst({
+            where: {
+                id: courseId,
+            },
+        });
+        if (existingCourse) {
+            yield prisma.courses.delete({
+                where: {
+                    id: courseId,
+                },
+            });
+            return res.status(200).json({ message: "Course deleted successfully" });
+        }
+        else {
+            res.status(404).json({ message: 'Course not found' });
+        }
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+        yield prisma.$disconnect();
+    }
+}));
 exports.default = router;

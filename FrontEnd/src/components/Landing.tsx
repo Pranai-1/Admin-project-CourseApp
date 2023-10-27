@@ -55,7 +55,7 @@ function Landing(){
           </>
         )}
         
-         {/* Hero Section starting.... */}
+        
          <div className='h-screen w-screen  bg-indigo-100 p-10'>
       
    

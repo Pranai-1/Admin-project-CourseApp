@@ -4,14 +4,16 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 interface Course {
-  _id: string;
+  id: number;
   title: string;
   description: string;
   image: string;
   published: boolean,
   adminId: string,
   name:string,
+  price:number
 }
+
 
 interface response{
   message:string,
@@ -35,7 +37,7 @@ function CreatedByInvidual(){
     })
 
 
-    const Delete = async (id:string) => {
+    const Delete = async (id:number) => {
         let token = localStorage.getItem('token');
         try {
           const res = await axios.delete(`http://localhost:3000/admin/courses/delete/${id}`, {
@@ -45,7 +47,7 @@ function CreatedByInvidual(){
           });
            const response:response=res.data
           if (response.message == "success") {
-            const updatedCourses = individualcourses.filter((course) => course._id !== id);
+            const updatedCourses = individualcourses.filter((course) => course.id !== id);
             setIndividualcourses(updatedCourses);
           }
         } catch (error) {
@@ -69,7 +71,7 @@ return(
              <p className="text-xl text-blue-600 font-bold p-3 w-screen mt-3 flex justify-center">Created Courses</p>
         <div className=" p-3 flex flex-wrap justify-center">
           {individualcourses.map((course) => (
-            <div key={course._id}  className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
+            <div key={course.id}  className="bg-indigo-100 m-10 h-[300px] w-[250px] rounded-lg overflow-hidden shadow-md ">
               <img className="h-[150px] w-full object-cover" src={course.image} alt="Course" />
               <div className="p-3 pb-0 h-[100px] m-0">
                 <h2 className="font-bold w-full text-xl text-blue-700">{course.title}</h2>
@@ -77,12 +79,12 @@ return(
               </div>
               <div className="flex justify-between items-center ml-3 mr-3 h-[40px]">
                 <Link
-                  to={`/admin/courses/${course._id}`}
+                  to={`/admin/courses/${course.id}`}
                   className="py-2 px-4 bg-blue-700 hover:bg-indigo-500 text-white font-medium rounded"
                 >
                   Update
                 </Link>
-                <button  onClick={()=>{Delete(course._id)}}
+                <button  onClick={()=>{Delete(course.id)}}
                   className="py-2 px-4 bg-red-700 hover:bg-red-500 text-white font-medium rounded ml-2">
                   Delete
                   </button>

@@ -1,7 +1,7 @@
 import { useRecoilValue } from "recoil"
 import { CourseTitle, CourseImage, CoursePrice } from "../store/selectors/coursedata"
 
-function CourseCard(props:{id:string}){
+function CourseCard(props:{id:number}){
   const courseTitle=useRecoilValue(CourseTitle)
   const courseImage=useRecoilValue(CourseImage)
   const coursePrice=useRecoilValue(CoursePrice)
